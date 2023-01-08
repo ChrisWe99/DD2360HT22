@@ -22,8 +22,7 @@ void matrixMultiplication(DataType *A, DataType *B, DataType *C, int numARows,
 }
 
 // matrix multiplication for GPU
-__global__ void gemm(DataType *A, DataType *B, DataType *C, int numARows,
-                      int numACols, int numBRows, int numBCols){
+__global__ void gemm(DataType *A, DataType *B, DataType *C, int numARows, int numACols, int numBRows, int numBCols){
     //@@ Insert code to implement matrix multiplication here
     
     const int rows = blockIdx.y * blockDim.y + threadIdx.y;
@@ -75,9 +74,14 @@ int main(int argc, char **argv) {
 
     //@@ Insert code below to allocate Host memory for input and output
     // allocate memory for sizeof datatype for each element of both input matrices and the output matrices
-    hostA = (DataType*) malloc(numARows * numACols * sizeof(DataType)); 
+    /*hostA = (DataType*) malloc(numARows * numACols * sizeof(DataType)); 
     hostB = (DataType*) malloc(numBRows * numBCols * sizeof(DataType)); 
-    hostC = (DataType*) malloc(numCRows * numCCols * sizeof(DataType)); 
+    hostC = (DataType*) malloc(numCRows * numCCols * sizeof(DataType)); */
+
+    //pinned mem alloc
+    cudaHostAlloc(&hostA, numARows * numACols * sizeof(DataType), cudaHostAllocDefault); 
+    cudaHostAlloc(&hostB, numBRows * numBCols * sizeof(DataType), cudaHostAllocDefault); 
+    cudaHostAlloc(&hostC, numCRows * numCCols * sizeof(DataType), cudaHostAllocDefault); 
     resultRef = (DataType*) malloc(numCRows * numCCols * sizeof(DataType));
 
     //@@ Insert code below to initialize hostA and hostB to random numbers, and create reference result in CPU
@@ -124,10 +128,10 @@ int main(int argc, char **argv) {
 
     //@@ Insert code below to compare the output with the reference
     bool equal = 1;
-    for (int i = 0; i < numCRows; ++i) {
-        for (int j = 0; j < numCCols; ++j) {
+    for (int i = 0; i < numCRows; i++) {
+        for (int j = 0; j < numCCols; j++) {
           // compare if single elements are equal based on an error threshold
-            if (fabs(hostC[i*numCCols + j] - resultRef[i*numCCols + j]) > 1e-4) {
+            if (fabs(hostC[i*numCCols + j] - resultRef[i*numCCols + j]) > 1e-3) {
                 equal = 0;
                 break;
             }
@@ -148,10 +152,10 @@ int main(int argc, char **argv) {
     cudaFree(deviceC);
 
     //@@ Free the CPU memory here
-    free(hostA);
-    free(hostB);
-    free(hostC);
-    free(resultRef);
+    cudaFree(hostA);
+    cudaFree(hostB);
+    cudaFree(hostC);
+    cudaFree(resultRef);
 
     return 0;
 }

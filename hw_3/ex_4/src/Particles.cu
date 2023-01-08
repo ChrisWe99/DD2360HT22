@@ -685,7 +685,7 @@ int mover_PC_GPU(struct particles* part, struct EMfield* field, struct grid* grd
     cudaFree(grd_GPU);
     cudaFree(param_GPU);                                                               
 
-    return(0); // return; is not working because "error: it should return a value"
+    return(0); // "return;"" is not working because "error: it should return a value"
 } 
 
 
